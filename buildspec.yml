@@ -1,16 +1,24 @@
 version: 0.2
 env:
   variables:
-    REPOSITORY_URI: 970853855377.dkr.ecr.ap-southeast-2.amazonaws.com/api-repository # 例: 970853855377.dkr.ecr.ap-southeast-2.amazonaws.com/api-repository
+    # フル URI にリポジトリ名を含める ★ ここを修正
+    REPOSITORY_URI: 970853855377.dkr.ecr.ap-southeast-2.amazonaws.com/api-repository
 phases:
   pre_build:
     commands:
-      - aws ecr get-login-password | docker login --username AWS --password-stdin $REPOSITORY_URI
+      # login だけはレジストリ直下に対して行う ★ /api-repository を除く
+      - REGISTRY=$(echo $REPOSITORY_URI | cut -d'/' -f1)
+      - aws ecr get-login-password --region ap-southeast-2 \
+          | docker login --username AWS --password-stdin $REGISTRY
   build:
     commands:
-      - IMAGE_TAG=$CODEBUILD_RESOLVED_SOURCE_VERSION # commit-ID をタグに
+      - IMAGE_TAG=$CODEBUILD_RESOLVED_SOURCE_VERSION   # commit ID をタグに
       - docker build -t $REPOSITORY_URI:$IMAGE_TAG .
   post_build:
     commands:
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-artifacts: {}
+      # CodePipeline 用 (後段で使う) — 追加しておくと便利
+      - printf '[{"name":"app","imageUri":"%s:%s"}]' $REPOSITORY_URI $IMAGE_TAG > imagedefinitions.json
+artifacts:
+  files: imagedefinitions.json
+  discard-paths: yes
