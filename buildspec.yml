@@ -14,7 +14,7 @@ phases:
   post_build:
     commands:
       - docker push $REPOSITORY_URI:$IMAGE_TAG
-      - printf '[{"name":"app","imageUri":"%s:%s"}]' $REPOSITORY_URI $IMAGE_TAG > imagedefinitions.json
+      - printf '[{"name":"reservation-api","imageUri":"%s:%s"}]' $REPOSITORY_URI $IMAGE_TAG > imagedefinitions.json
 artifacts:
   files: imagedefinitions.json
   discard-paths: yes
